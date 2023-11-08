@@ -310,6 +310,12 @@ public abstract class BaseTableDataManager implements TableDataManager {
 
   @Override
   public List<SegmentDataManager> acquireSegments(List<String> segmentNames, List<String> missingSegments) {
+    return acquireSegments(segmentNames, null, missingSegments);
+  }
+
+  @Override
+  public List<SegmentDataManager> acquireSegments(List<String> segmentNames,
+      @Nullable List<String> optionalSegmentNames, List<String> missingSegments) {
     List<SegmentDataManager> segmentDataManagers = new ArrayList<>();
     for (String segmentName : segmentNames) {
       SegmentDataManager segmentDataManager = _segmentDataManagerMap.get(segmentName);
@@ -317,6 +323,15 @@ public abstract class BaseTableDataManager implements TableDataManager {
         segmentDataManagers.add(segmentDataManager);
       } else {
         missingSegments.add(segmentName);
+      }
+    }
+    if (optionalSegmentNames != null) {
+      for (String segmentName : optionalSegmentNames) {
+        SegmentDataManager segmentDataManager = _segmentDataManagerMap.get(segmentName);
+        // Optional segments are not counted to missing segments that are reported back in query exception.
+        if (segmentDataManager != null && segmentDataManager.increaseReferenceCount()) {
+          segmentDataManagers.add(segmentDataManager);
+        }
       }
     }
     return segmentDataManagers;
